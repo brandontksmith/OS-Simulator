@@ -1,17 +1,23 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package os.simulator;
 
-/**
- *
- * @author BTKS
- */
 public class Clock {
     
-    public void execute() {}
-    public void getClock() {}
+    /**
+     * The number of cycles the CPU has executed.
+     */
+    private int cycles = 0;
     
+    /**
+     * Advances the clock by one cycle.
+     */
+    public void execute() {
+        cycles++;
+    }
+    
+    /**
+     * Returns the current CPU Time (number of cycles).
+     */
+    public int getClock() {
+        return cycles;
+    }   
 }

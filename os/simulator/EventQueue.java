@@ -12,9 +12,11 @@ package os.simulator;
 public class EventQueue implements QueueInterface {
     
     @Override
-    public void enQueue() {}
+    public void enQueue(PCB process) {
+    }
     
     @Override
-    public void deQueue() {}
+    public void deQueue(PCB process) {
+    }
     
 }

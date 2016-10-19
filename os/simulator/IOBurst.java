@@ -1,18 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package os.simulator;
 
-/**
- *
- * @author BTKS
- */
+import java.util.Random;
+
 public class IOBurst {
     
-    public static int generateIOBurst() {
-        return 0;
-    }
+    /**
+     * The minimum number of cycles for I/O.
+     */
+    public static final int MINIMUM_IO_CYCLES = 25;
     
+    /**
+     * The maximum number of cycles for I/O.
+     */
+    public static final int MAXIMUM_IO_CYCLES = 50;
+    
+    /**
+     * Returns a randomly generated number of cycles for simulating I/O.
+     * 
+     * @return randomly generated number of cycles
+     */
+    public static int generateIOBurst() {
+        Random r = new Random();
+        
+        return r.nextInt(MINIMUM_IO_CYCLES) + (MAXIMUM_IO_CYCLES - MINIMUM_IO_CYCLES + 1);
+    }   
 }

@@ -11,7 +11,7 @@ package os.simulator;
  */
 public interface QueueInterface {
     
-    public void enQueue();
-    public void deQueue();
+    public void enQueue(PCB process);
+    public void deQueue(PCB process);
     
 }

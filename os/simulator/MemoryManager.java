@@ -11,4 +11,19 @@ package os.simulator;
  */
 public class MemoryManager {
     
+    private int memorySize;
+    private Memory memory;
+    
+    public MemoryManager(int memorySize) {
+        this.memorySize = memorySize;
+        this.memory = new Memory(memorySize, 0);
+    }
+    
+    public int getAvailableMemory() {
+        return memory.getFree();
+    }
+    
+    public int getAllocatedMemory() {
+        return memory.getAllocated();
+    }
 }

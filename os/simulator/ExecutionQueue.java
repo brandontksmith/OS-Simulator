@@ -5,16 +5,28 @@
  */
 package os.simulator;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author BTKS
  */
 public class ExecutionQueue implements QueueInterface {
     
-    @Override
-    public void enQueue() {}
+    List<PCB> processes;
+    
+    public ExecutionQueue() {
+        this.processes = new ArrayList<PCB>();
+    }
     
     @Override
-    public void deQueue() {}
+    public void enQueue(PCB process) {
+        this.processes.add(process);
+    }
     
+    @Override
+    public void deQueue(PCB process) {
+        this.processes.remove(process);
+    }
 }

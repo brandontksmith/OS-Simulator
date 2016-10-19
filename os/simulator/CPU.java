@@ -11,7 +11,18 @@ package os.simulator;
  */
 public class CPU {
     
-    public void advanceClock() {}
+    private Scheduler scheduler;
+    private Clock clock;
+    
+    public CPU(Scheduler scheduler, Clock clock) {
+        this.scheduler = scheduler;
+        this.clock = clock;
+    }
+        
+    public void advanceClock() {
+        clock.execute();
+    }
+    
     public void detectInterrupt() {}
     public void detectPreemption() {}
     
