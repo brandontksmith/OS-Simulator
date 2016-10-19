@@ -11,4 +11,8 @@ package os.simulator;
  */
 public class IOBurst {
     
+    public static int generateIOBurst() {
+        return 0;
+    }
+    
 }

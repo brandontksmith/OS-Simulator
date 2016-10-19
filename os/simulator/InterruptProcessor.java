@@ -11,4 +11,8 @@ package os.simulator;
  */
 public class InterruptProcessor {
     
+    public void signalInterrupt() {}
+    public void addEvent() {}
+    public void getEvent() {}
+    
 }

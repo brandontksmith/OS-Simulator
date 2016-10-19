@@ -9,9 +9,12 @@ package os.simulator;
  *
  * @author BTKS
  */
-public class Clock {
+public class ExecutionQueue implements QueueInterface {
     
-    public void execute() {}
-    public void getClock() {}
+    @Override
+    public void enQueue() {}
+    
+    @Override
+    public void deQueue() {}
     
 }

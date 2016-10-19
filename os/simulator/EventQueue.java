@@ -9,6 +9,12 @@ package os.simulator;
  *
  * @author BTKS
  */
-public class EventQueue {
+public class EventQueue implements QueueInterface {
+    
+    @Override
+    public void enQueue() {}
+    
+    @Override
+    public void deQueue() {}
     
 }

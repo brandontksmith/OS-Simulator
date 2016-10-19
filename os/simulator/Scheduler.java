@@ -11,4 +11,23 @@ package os.simulator;
  */
 public class Scheduler {
     
+    public void insertPCB() {}
+    public void removePCB() {}
+    
+    public ProcessState getState() {
+        return null;
+    }
+    
+    public void setState() {
+        
+    }
+    
+    public void getWait() {}
+    public void setWait() {}
+    
+    public void getArrival() {}
+    public void setArrival() {}
+
+    public void getCPUTime() {}
+    public void setCPUTime() {} 
 }

@@ -9,9 +9,13 @@ package os.simulator;
  *
  * @author BTKS
  */
-public class Clock {
+public class CommandInterface {
     
-    public void execute() {}
-    public void getClock() {}
+    public void proc() {}
+    public void mem() {}
+    public void load() {}
+    public void exe() {}
+    public void reset() {}
+    public void promptUser() {}
     
 }
