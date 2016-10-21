@@ -5,30 +5,57 @@
  */
 package os.simulator;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author BTKS
  */
 public class PCB {
     
+    private int processID;
+    
     private ProcessState state;
     private int nextInstructionIndex;
     private int memoryAllocated;
     
+    private ArrayList<String> operations;
+    private ArrayList<Integer> cycles;
+    
+    private int initialBurst;
+    private int burst;
     private int arrival;
     private int wait;
     private int CPUTime;
     
-    public PCB(ProcessState state, int nextInstructionIndex, int memoryAllocated) {
+    private boolean arrived;
+    private boolean started;
+    private boolean active;
+    private boolean finished;
+    
+    public PCB(int processID, ProcessState state, int nextInstructionIndex,
+            int memoryAllocated, ArrayList<String> operations, ArrayList<Integer> cycles, 
+            int arrival, int initialBurst) {
+        this.processID = processID;
         this.state = state;
         this.nextInstructionIndex = nextInstructionIndex;
         this.memoryAllocated = memoryAllocated;
         
-        this.arrival = 0;
+        this.operations = operations;
+        this.cycles = cycles;
+        
+        this.initialBurst = initialBurst;
+        this.burst = initialBurst;
+        this.arrival = arrival;
         this.wait = 0;
         this.CPUTime = 0;
+        
+        this.arrived = false;
+        this.started = false;
+        this.active = false;
+        this.finished = false;
     }
-
+    
     public ProcessState getState() {
         return state;
     }
@@ -75,5 +102,77 @@ public class PCB {
 
     public void setCPUTime(int CPUTime) {
         this.CPUTime = CPUTime;
+    }
+
+    public int getProcessID() {
+        return processID;
+    }
+
+    public void setProcessID(int processID) {
+        this.processID = processID;
+    }
+
+    public ArrayList<String> getOperations() {
+        return operations;
+    }
+
+    public void setOperations(ArrayList<String> operations) {
+        this.operations = operations;
+    }
+
+    public ArrayList<Integer> getCycles() {
+        return cycles;
+    }
+
+    public void setCycles(ArrayList<Integer> cycles) {
+        this.cycles = cycles;
+    }
+    
+    public int getBurst() {
+        return burst;
+    }
+
+    public void setBurst(int burst) {
+        this.burst = burst;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean isFinished() {
+        return finished;
+    }
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
+    }
+
+    public boolean isArrived() {
+        return arrived;
+    }
+
+    public void setArrived(boolean arrived) {
+        this.arrived = arrived;
+    }
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    public void setStarted(boolean started) {
+        this.started = started;
+    }
+
+    public int getInitialBurst() {
+        return initialBurst;
+    }
+
+    public void setInitialBurst(int initialBurst) {
+        this.initialBurst = initialBurst;
     }
 }

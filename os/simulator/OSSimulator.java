@@ -10,28 +10,17 @@ package os.simulator;
  * @author BTKS
  */
 public class OSSimulator {
-
-    private static final int ROUND_ROBIN_TIME_QUANTUM = 10;
     
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        CommandInterface commandInterface = new CommandInterface();
+        
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Desktop().setVisible(true);
+                new Desktop(commandInterface).setVisible(true);
             }
-        });
-        
-        Scheduler scheduler = new Scheduler(0, ROUND_ROBIN_TIME_QUANTUM);
-        Clock clock = new Clock();
-        
-        CPU cpu = new CPU(scheduler, clock);
-    }
-    
-    public void simulate() {
-        while (true) {
-            
-        }
-    }
+        });        
+    }    
 }

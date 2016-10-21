@@ -11,16 +11,32 @@ package os.simulator;
  */
 public class Scheduler {
     
-    private int currentTime;
     private int rrTimeQuantum;
-    private PCB activeProcess;
     private ExecutionQueue readyQueue;
+    private int timeRemaining;
     
-    public Scheduler(int currentTime, int rrTimeQuantum) {
-        this.currentTime = currentTime;
+    private PCB activeProcess;
+    
+    public Scheduler(int rrTimeQuantum) {
         this.rrTimeQuantum = rrTimeQuantum;
-        this.activeProcess = null;
         this.readyQueue = new ExecutionQueue();
+        this.timeRemaining = rrTimeQuantum;
+        this.activeProcess = null;
+    }
+    
+    public PCB getNextProcess(int currentTime) {
+        if (timeRemaining == 0) {
+            readyQueue.enQueue(activeProcess);
+        }
+        
+        if (activeProcess == null || timeRemaining == 0 || activeProcess.isFinished()) {
+            activeProcess = readyQueue.poll();
+            timeRemaining = rrTimeQuantum;
+        }
+        
+        timeRemaining--;
+        
+        return activeProcess;
     }
     
     public void insertPCB(PCB process) {
@@ -59,5 +75,21 @@ public class Scheduler {
     }
     public void setCPUTime(PCB process, int CPUTime) {
         process.setCPUTime(CPUTime);
-    } 
+    }
+
+    public int getRrTimeQuantum() {
+        return rrTimeQuantum;
+    }
+
+    public void setRrTimeQuantum(int rrTimeQuantum) {
+        this.rrTimeQuantum = rrTimeQuantum;
+    }
+    
+    public ExecutionQueue getReadyQueue() {
+        return readyQueue;
+    }
+
+    public void setReadyQueue(ExecutionQueue readyQueue) {
+        this.readyQueue = readyQueue;
+    }
 }

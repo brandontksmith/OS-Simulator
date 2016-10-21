@@ -11,10 +11,14 @@ package os.simulator;
  */
 public class Desktop extends javax.swing.JFrame {
 
+    private CommandInterface commandInterface;
+    
     /**
      * Creates new form Desktop
      */
-    public Desktop() {
+    public Desktop(CommandInterface commandInterface) {
+        this.commandInterface = commandInterface;
+        
         initComponents();
     }
 
@@ -98,7 +102,9 @@ public class Desktop extends javax.swing.JFrame {
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
         String command = textField1.getText();
         textField1.setText("");
-        textArea1.append("> " + command + "\n");
+        textArea1.append("OS-Simulator: " + command + "\n");
+        
+        commandInterface.handleCommand(command);
     }//GEN-LAST:event_button1ActionPerformed
 
     /**
@@ -131,7 +137,7 @@ public class Desktop extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Desktop().setVisible(true);
+                //new Desktop().setVisible(true);
             }
         });
     }

@@ -5,8 +5,8 @@
  */
 package os.simulator;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  *
@@ -14,10 +14,10 @@ import java.util.List;
  */
 public class ExecutionQueue implements QueueInterface {
     
-    List<PCB> processes;
+    Queue<PCB> processes;
     
     public ExecutionQueue() {
-        this.processes = new ArrayList<PCB>();
+        this.processes = new LinkedList<PCB>();
     }
     
     @Override
@@ -28,5 +28,21 @@ public class ExecutionQueue implements QueueInterface {
     @Override
     public void deQueue(PCB process) {
         this.processes.remove(process);
+    }
+    
+    public boolean isEmpty() {
+        return processes.isEmpty();
+    }
+    
+    public PCB poll() {
+        return processes.poll();
+    }
+    
+    public int size() {
+        return processes.size();
+    }
+    
+    public PCB get(int index) {
+        return (PCB) processes.toArray()[index];
     }
 }
