@@ -5,92 +5,112 @@
  */
 package os.simulator;
 
+import java.util.LinkedList;
+
 /**
  *
  * @author BTKS
  */
 public class CPU {
     
-    private Scheduler scheduler;
-    private MemoryManager memoryManager;
-    private InterruptProcessor interruptProcessor;
     private Clock clock;
     
     private PCB activeProcess;
     
-    public CPU(Scheduler scheduler, MemoryManager memoryManager, InterruptProcessor interruptProcessor) {
-        this.scheduler = scheduler;
-        this.memoryManager = memoryManager;
-        this.interruptProcessor = interruptProcessor;
+    public CPU() {
         this.clock = new Clock();
         this.activeProcess = null;
     }
     
     public void setActiveProcess(PCB process) {
         this.activeProcess = process;
+        
+        if (activeProcess == null) {
+            return;
+        }
+        
+        if (!activeProcess.isArrived()) {
+            activeProcess.setArrived(true);
+            activeProcess.setArrival(getClock().getClock());
+        }
+        
+        if (!activeProcess.isStarted()) {
+            activeProcess.setStarted(true);
+        }
+        
+        activeProcess.setState(ProcessState.RUN);
     }
     
     public void advanceClock() {
+        clock.execute();;
+        
+        detectInterrupt();
+                
         if (activeProcess != null) {
+            String instructionName = activeProcess.getCurrentInstruction();
             activeProcess.setBurst(activeProcess.getBurst() - 1);
-
-            if (activeProcess.getInstructionCycles() <= 0) {
-                activeProcess.setNextInstructionIndex(activeProcess.getNextInstructionIndex() + 1);
-                activeProcess.setInstructionCycles(activeProcess.getCycles().get(activeProcess.getNextInstructionIndex()));
-
-                String instructionName = activeProcess.getOperations().get(activeProcess.getNextInstructionIndex());
-
-                if (instructionName.equals("CALCULATE")) {
-                    // calculation
-                } else if (instructionName.equals("I/O")) {
+            
+            switch (instructionName) {
+                case "CALCULATE":
+                    break;
+                
+                case "I/O":
                     activeProcess.setState(ProcessState.WAIT);
-                    scheduler.getWaitingQueue().enQueue(activeProcess);
-                } else if (instructionName.equals("YIELD")) {
-                } else if (instructionName.equals("OUT")) {
-                }
+                    activeProcess.setWaitingIO(true);
+                    
+                    OS.scheduler.getWaitingQueue().enQueue(activeProcess);
+                    OS.ioScheduler.scheduleIO(activeProcess, clock.getClock());
+                    
+                    break;
+                
+                case "YIELD":
+                    detectPreemption();
+                    
+                    break;
+                
+                case "OUT":
+                    System.out.println(activeProcess);
+                    
+                    break;
             }
-
+            
             activeProcess.setInstructionCycles(activeProcess.getInstructionCycles() - 1);
-
-            if (!activeProcess.isArrived()) {
-                activeProcess.setArrived(true);
-                activeProcess.setArrival(getClock().getClock());
-            }
-
-            if (!activeProcess.isStarted()) {
-                activeProcess.setStarted(true);
-            }
-
-            if (!activeProcess.isActive()) {
-                activeProcess.setActive(true);
-                activeProcess.setState(ProcessState.RUN);
-            }
-
+            
             if (activeProcess.getBurst() == 0) {
                 activeProcess.setFinished(true);
                 activeProcess.setState(ProcessState.EXIT);
-                memoryManager.deallocateMemory(activeProcess.getMemoryAllocated());
+                
+                OS.memoryManager.deallocateMemory(activeProcess.getMemoryAllocated());
             }
+        } else {
+            System.out.println("No Process Running @ " + clock.getClock());
         }
-        
-        clock.execute();
     }
         
     public void detectInterrupt() {
+        LinkedList<ECB> events = OS.interruptProcessor.signalInterrupt(clock.getClock());
         
+        while (!events.isEmpty()) {
+            ECB event = events.poll();
+            PCB process = event.getProcess();
+            
+            if (process.isFinished()) {
+                continue;
+            }
+            
+            process.setWaitingIO(false);
+            process.incrementIoComplete();
+            process.setState(ProcessState.READY);
+            
+            OS.scheduler.removePCB(process, true);            
+            OS.scheduler.insertPCB(process, false);
+        }
     }
     
     public void detectPreemption() {
+        OS.scheduler.resetTimeRemaining();
     }
-
-    public Scheduler getScheduler() {
-        return scheduler;
-    }
-
-    public void setScheduler(Scheduler scheduler) {
-        this.scheduler = scheduler;
-    }
-
+    
     public Clock getClock() {
         return clock;
     }

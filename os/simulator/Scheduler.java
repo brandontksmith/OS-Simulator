@@ -27,7 +27,8 @@ public class Scheduler {
     }
     
     public PCB getNextProcess(int currentTime) {
-        if (timeRemaining == 0) {
+        if (timeRemaining == 0 && activeProcess.getState() == ProcessState.RUN) {
+            activeProcess.setState(ProcessState.READY);
             readyQueue.enQueue(activeProcess);
         }
         
@@ -41,6 +42,10 @@ public class Scheduler {
         return activeProcess;
     }
     
+    public void resetTimeRemaining() {
+        this.timeRemaining = 0;
+    }
+    
     public void insertPCB(PCB process, boolean waiting) {
         if (waiting) {
             waitingQueue.enQueue(process);
@@ -51,7 +56,7 @@ public class Scheduler {
     
     public void removePCB(PCB process, boolean waiting) {
         if (waiting) {
-            waitingQueue.enQueue(process);
+            waitingQueue.deQueue(process);
         } else {
             readyQueue.deQueue(process);
         }

@@ -5,44 +5,38 @@
  */
 package os.simulator;
 
+import java.util.LinkedList;
+
 /**
  *
  * @author BTKS
  */
 public class InterruptProcessor {
-    
-    private EventQueue eventQueue;
-    private Scheduler scheduler;
-    
-    public InterruptProcessor(Scheduler scheduler) {
-        this.eventQueue = new EventQueue();
-        this.scheduler = scheduler;
-    }
-    
-    public void signalInterrupt(int clockTime) {
-        boolean hasEventsMatchingTime = true;
         
+    public InterruptProcessor() {
+    }
+        
+    public LinkedList<ECB> signalInterrupt(int clockTime) {
+        boolean hasEventsMatchingTime = true;
+        LinkedList<ECB> finishedEvents = new LinkedList<>();
+                
         while (hasEventsMatchingTime) {
-            if (eventQueue.peek().getClockTime() == clockTime && eventQueue.peek().getEventType() == EventType.INTERRUPT) {
-                ECB event = eventQueue.poll();
+            if (OS.eventQueue.peek() != null && OS.eventQueue.peek().getClockTime() == clockTime && OS.eventQueue.peek().getEventType() == EventType.INTERRUPT) {
+                finishedEvents.add(OS.eventQueue.poll());
             } else {
                 hasEventsMatchingTime = false;
             }
         }
+        
+        return finishedEvents;
     }
     
     public void addEvent(PCB process, int cycles, EventType eventType) {
         ECB event = new ECB(process, cycles, eventType);
-        this.eventQueue.enQueue(event);
+        OS.eventQueue.enQueue(event);
     }
     
-    public void getEvent() {}
-
-    public EventQueue getEventQueue() {
-        return eventQueue;
-    }
-
-    public void setEventQueue(EventQueue eventQueue) {
-        this.eventQueue = eventQueue;
+    public ECB getEvent() {
+        return null;
     }
 }

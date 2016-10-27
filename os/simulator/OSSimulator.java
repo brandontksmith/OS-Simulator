@@ -11,19 +11,24 @@ package os.simulator;
  */
 public class OSSimulator {
     
-    public static final int ROUND_ROBIN_TIME_QUANTUM = 10;
-    public static final int MEMORY_SIZE_IN_KB = 256;
+    public static volatile CommandInterface commandInterface;
     
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        CommandInterface commandInterface = new CommandInterface();
+    public static Desktop desktop;
+    
+    public static Thread commandInterfaceThread;
+        
+    public static void main(String[] args) {        
+        commandInterface = new CommandInterface();
+        
+        OS.initializeOS();
+        
+        new Thread(commandInterface).start();
         
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Desktop(commandInterface).setVisible(true);
+                OSSimulator.desktop = new Desktop();
+                OSSimulator.desktop.setVisible(true);
             }
-        });        
-    }    
+        });
+    }
 }

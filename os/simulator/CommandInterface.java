@@ -10,33 +10,43 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
  * @author BTKS
  */
-public class CommandInterface {
-        
+public class CommandInterface implements Runnable {
+    
+    public static volatile LinkedList<String> commands = new LinkedList<>();
+    
     private int processID;
     private ArrayList<LoadableData> loadables;
-    
-    public Scheduler scheduler;
-    public CPU cpu;
-    public MemoryManager memoryManager;
-    public InterruptProcessor interruptProcessor;
-    
+            
     public CommandInterface() {
         this.processID = 100;
-        this.loadables = new ArrayList<>();
-        
-        this.scheduler = new Scheduler(OSSimulator.ROUND_ROBIN_TIME_QUANTUM);
-        this.memoryManager = new MemoryManager(OSSimulator.MEMORY_SIZE_IN_KB);
-        this.interruptProcessor = new InterruptProcessor(scheduler);
-        this.cpu = new CPU(scheduler, memoryManager, interruptProcessor);
+        this.loadables = new ArrayList<>();        
 
     }
-            
+    
+    public static synchronized void addCommand(String cmd) {
+        CommandInterface.commands.add(cmd);
+    }
+    
+    @Override
+    public void run() {
+        while (true) {
+            if (!commands.isEmpty()) {
+                OSSimulator.commandInterface.handleCommand(commands.poll());
+            }
+        }
+    }
+    
     public void handleCommand(String cmd) {
         if (cmd.startsWith("<")) {
             int indexOfClosingAngleBracket = cmd.indexOf(">");
@@ -109,7 +119,10 @@ public class CommandInterface {
                         StringTokenizer st = new StringTokenizer(s);
                         
                         String operation = st.nextToken();
-                        operations.add(operation);
+                        
+                        if (!operation.equals("MEM_REQ")) {
+                            operations.add(operation);
+                        }
                         
                         if (st.hasMoreTokens()) {
                             String cyclesUnformatted = st.nextToken();
@@ -123,7 +136,7 @@ public class CommandInterface {
                                 int numberOfCycles = 0;
 
                                 if (numberOfCyclesStr.equals("?")) {
-                                    numberOfCycles = IOBurst.generateIOBurst();
+                                    numberOfCycles = 1;
                                 } else {
                                     numberOfCycles = Integer.parseInt(numberOfCyclesStr);
                                 }
@@ -132,7 +145,8 @@ public class CommandInterface {
                                 cyclesOfOperations.add(numberOfCycles);
                             }
                         } else {
-                            cyclesOfOperations.add(0);
+                            initialBurst += 1;
+                            cyclesOfOperations.add(1);
                         }
                     }
                     
@@ -143,16 +157,18 @@ public class CommandInterface {
                     System.out.println(ioe.getMessage());
 		}
                 
-                if (memoryManager.allocateMemory(memorySize)) {
-                    PCB process = new PCB(processID++, ProcessState.READY, 0, memorySize, 
+                if (OS.memoryManager.allocateMemory(memorySize)) {
+                    PCB process = new PCB(loadable.getJobProgramName(), processID++, ProcessState.READY, 0, memorySize, 
                             operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
                     
-                    scheduler.insertPCB(process, false);
+                    OS.scheduler.insertPCB(process, false);
+                    OS.processes.enQueue(process);
                 } else {
-                    PCB process = new PCB(processID++, ProcessState.WAIT, 0, memorySize, 
+                    PCB process = new PCB(loadable.getJobProgramName(), processID++, ProcessState.NEW, 0, memorySize, 
                             operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
                     
-                    scheduler.insertPCB(process, true);
+                    OS.scheduler.insertPCB(process, true);
+                    OS.processes.enQueue(process);
                 }
             }
         }
@@ -161,47 +177,92 @@ public class CommandInterface {
     }
     
     public void exe(int cycles) {        
-        while (cycles == 0 || cpu.getClock().getClock() <= cycles) {
-            if (cpu.getActiveProcess() == null && scheduler.getWaitingQueue().isEmpty() && scheduler.getReadyQueue().isEmpty() && loadables.isEmpty()) {
+        while (cycles == 0 || OS.cpu.getClock().getClock() <= cycles) {
+            if (OS.cpu.getActiveProcess() != null) {
+                System.out.println("Process ID: " + OS.cpu.getActiveProcess().getProcessID() + ", "
+                        + "Wait: " + OS.cpu.getActiveProcess().getWait() + ", "
+                        + "Burst: " + OS.cpu.getActiveProcess().getBurst() + ", "
+                        + "Arrived: " + OS.cpu.getActiveProcess().isArrived() + ", "
+                        + "Finished: " + OS.cpu.getActiveProcess().isFinished() + ", "
+                        + "Started: " + OS.cpu.getActiveProcess().isStarted() + ", "
+                        + "Next Instruction: " + OS.cpu.getActiveProcess().getInstructionIndex() + ", "
+                        + "Instruction Cycles: " + OS.cpu.getActiveProcess().getInstructionCycles() + ", "
+                        + "Current Instruction: " + OS.cpu.getActiveProcess().getOperations().get(OS.cpu.getActiveProcess().getInstructionIndex())
+                );
+            }
+            
+            if (OS.cpu.getActiveProcess() == null && OS.scheduler.getWaitingQueue().isEmpty() && OS.scheduler.getReadyQueue().isEmpty() && loadables.isEmpty()) {
                 break;
             }
             
-            loadPrograms(cpu.getClock().getClock());
+            if (!loadables.isEmpty()) {
+                loadPrograms(OS.cpu.getClock().getClock());
+            }
             
-            cpu.setActiveProcess(scheduler.getNextProcess(0));
-            cpu.advanceClock();
+            OS.cpu.setActiveProcess(OS.scheduler.getNextProcess(0));
+            OS.cpu.advanceClock();
             
-            for (int i = 0; i < scheduler.getReadyQueue().size(); i++) {
-                PCB p = scheduler.getReadyQueue().get(i);
+            for (int i = 0; i < OS.scheduler.getReadyQueue().size(); i++) {
+                PCB p = OS.scheduler.getReadyQueue().get(i);
 
-                if (cpu.getActiveProcess() == null || p.getProcessID() != cpu.getActiveProcess().getProcessID()) {
+                if (OS.cpu.getActiveProcess() == null || p.getProcessID() != OS.cpu.getActiveProcess().getProcessID()) {
                     p.setWait(p.getWait() + 1);
                 }
             }
-
-            for (int i = 0; i < scheduler.getWaitingQueue().size(); i++) {
-                PCB process = scheduler.getWaitingQueue().get(i);
-
-                if (memoryManager.allocateMemory(process.getMemoryAllocated())) {
-                    scheduler.getWaitingQueue().deQueue(process);
+            
+            for (int i = 0; i < OS.scheduler.getWaitingQueue().size(); i++) {
+                PCB process = OS.scheduler.getWaitingQueue().get(i);
+                
+                if (process.isWaitingIO()) {
+                    continue;
+                }
+                
+                if (OS.memoryManager.allocateMemory(process.getMemoryAllocated())) {
+                    OS.scheduler.getWaitingQueue().deQueue(process);
                     process.setState(ProcessState.READY);
-                    scheduler.insertPCB(process, true);
+                    OS.scheduler.insertPCB(process, false);
                 }
             }
-
-            if (cpu.getActiveProcess() != null) {
-                System.out.println("Process ID: " + cpu.getActiveProcess().getProcessID() + ", "
-                        + "Wait: " + cpu.getActiveProcess().getWait() + ", "
-                        + "Burst: " + cpu.getActiveProcess().getBurst() + ", "
-                        + "Arrived: " + cpu.getActiveProcess().isArrived() + ", "
-                        + "Active: " + cpu.getActiveProcess().isActive() + ", "
-                        + "Finished: " + cpu.getActiveProcess().isFinished() + ", "
-                        + "Started: " + cpu.getActiveProcess().isStarted() + ", "
-                        + "Next Instruction: " + cpu.getActiveProcess().getNextInstructionIndex() + ", "
-                        + "Instruction Cycles: " + cpu.getActiveProcess().getInstructionCycles() + ", "
-                        + "Current Instruction: " + cpu.getActiveProcess().getOperations().get(cpu.getActiveProcess().getNextInstructionIndex())
-                );
+            
+            JTable memoryTable = OSSimulator.desktop.jTable1;
+            JTable processTable = OSSimulator.desktop.jTable2;
+            
+            while(memoryTable.getRowCount() > 0) {
+                ((DefaultTableModel) memoryTable.getModel()).removeRow(0);
             }
+            
+            int row = 0;
+            
+            for (int i = 0; i < OS.processes.size(); i++) {
+                PCB process = OS.processes.get(i);
+                
+                if (process.isFinished() || process.getState() == ProcessState.NEW) {
+                    continue;
+                }
+                
+                ((DefaultTableModel) memoryTable.getModel()).insertRow(row++, new Object[]{
+                    process.getProgramName(),
+                    process.getMemoryAllocated()
+                });
+            }
+            
+            while(processTable.getRowCount() > 0) {
+                ((DefaultTableModel) processTable.getModel()).removeRow(0);
+            }
+            
+            row = 0;
+            
+            for (int i = 0; i < OS.processes.size(); i++) {
+                PCB process = OS.processes.get(i);
+                
+                ((DefaultTableModel) processTable.getModel()).insertRow(row++, process.formatForTable());
+            }
+            
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(CommandInterface.class.getName()).log(Level.SEVERE, null, ex);
+            }            
         }
     }
     
@@ -209,7 +270,7 @@ public class CommandInterface {
     
     public void promptUser() {}
     
-        public class LoadableData {
+    public class LoadableData {
         
         private int simulationCycle;
         private String jobProgramName;

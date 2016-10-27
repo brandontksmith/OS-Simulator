@@ -50,11 +50,11 @@ public class EventQueue {
         public int compare(ECB event1, ECB event2)
         {
             if (event1.getClockTime() < event2.getClockTime()) {
-                return 1;
+                return -1;
             }
             
             if (event1.getClockTime() > event2.getClockTime()) {
-                return -1;
+                return 1;
             }
             
             return 0;

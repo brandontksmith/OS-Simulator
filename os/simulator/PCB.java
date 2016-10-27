@@ -13,10 +13,11 @@ import java.util.ArrayList;
  */
 public class PCB {
     
+    private String programName;
     private int processID;
     
     private ProcessState state;
-    private int nextInstructionIndex;
+    private int instructionIndex;
     private int memoryAllocated;
     
     private ArrayList<String> operations;
@@ -29,23 +30,25 @@ public class PCB {
     private int arrival;
     private int wait;
     private int CPUTime;
+    private int ioComplete;
     
     private boolean arrived;
     private boolean started;
-    private boolean active;
     private boolean finished;
+    private boolean waitingIO;
     
-    public PCB(int processID, ProcessState state, int nextInstructionIndex,
+    public PCB(String programName, int processID, ProcessState state, int instructionIndex,
             int memoryAllocated, ArrayList<String> operations, ArrayList<Integer> cycles, 
             int arrival, int initialBurst) {
+        this.programName = programName;
         this.processID = processID;
         this.state = state;
-        this.nextInstructionIndex = nextInstructionIndex;
+        this.instructionIndex = instructionIndex;
         this.memoryAllocated = memoryAllocated;
         
         this.operations = operations;
         this.cycles = cycles;
-        this.instructionCycles = cycles.get(nextInstructionIndex);
+        this.instructionCycles = cycles.get(instructionIndex);
         
         this.initialBurst = initialBurst;
         this.burst = initialBurst;
@@ -54,7 +57,6 @@ public class PCB {
         this.CPUTime = 0;        
         this.arrived = false;
         this.started = false;
-        this.active = false;
         this.finished = false;
     }
     
@@ -65,15 +67,7 @@ public class PCB {
     public void setState(ProcessState state) {
         this.state = state;
     }
-
-    public int getNextInstructionIndex() {
-        return nextInstructionIndex;
-    }
-
-    public void setNextInstructionIndex(int nextInstructionIndex) {
-        this.nextInstructionIndex = nextInstructionIndex;
-    }
-
+    
     public int getMemoryAllocated() {
         return memoryAllocated;
     }
@@ -137,15 +131,7 @@ public class PCB {
     public void setBurst(int burst) {
         this.burst = burst;
     }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
+    
     public boolean isFinished() {
         return finished;
     }
@@ -185,4 +171,99 @@ public class PCB {
     public void setInstructionCycles(int instructionCycles) {
         this.instructionCycles = instructionCycles;
     }
+    
+    @Override
+    public String toString() {
+        String str = "Process ID: " + processID + "\n";
+        str += "Process State: " + state + "\n";
+        str += "Memory Allocated: " + memoryAllocated + "\n";
+        
+        return str;
+    }
+    
+    public Object[] formatForTable() {
+        Object[] arr = {
+            processID,
+            state,
+            memoryAllocated,
+            initialBurst - burst,
+            burst,
+            ioComplete
+        };
+        
+        return arr;
+    }
+
+    public int getIoComplete() {
+        return ioComplete;
+    }
+
+    public void setIoComplete(int ioComplete) {
+        this.ioComplete = ioComplete;
+    }
+
+    public boolean isWaitingIO() {
+        return waitingIO;
+    }
+
+    public void setWaitingIO(boolean waitingIO) {
+        this.waitingIO = waitingIO;
+    }
+    
+    public void incrementIoComplete() {
+        ioComplete++;
+    }
+
+    public String getProgramName() {
+        return programName;
+    }
+
+    public void setProgramName(String programName) {
+        this.programName = programName;
+    }
+    
+    public String getCurrentInstruction() {
+        if (instructionCycles == 0) {
+            instructionIndex++;
+            instructionCycles = cycles.get(instructionIndex);
+        }
+        
+        return operations.get(instructionIndex);
+    }
+
+    public int getInstructionIndex() {
+        return instructionIndex;
+    }
+
+    public void setInstructionIndex(int instructionIndex) {
+        this.instructionIndex = instructionIndex;
+    }
+    
+    
 }
+
+/*
+
+    private int processID;
+    
+    private ProcessState state;
+    private int nextInstructionIndex;
+    private int memoryAllocated;
+    
+    private ArrayList<String> operations;
+    private ArrayList<Integer> cycles;
+    
+    private int instructionCycles;
+    
+    private int initialBurst;
+    private int burst;
+    private int arrival;
+    private int wait;
+    private int CPUTime;
+    
+    private boolean arrived;
+    private boolean started;
+    private boolean active;
+    private boolean finished;
+
+*/
