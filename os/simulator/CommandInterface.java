@@ -17,30 +17,26 @@ import java.util.StringTokenizer;
  * @author BTKS
  */
 public class CommandInterface {
-    
-    private static final int ROUND_ROBIN_TIME_QUANTUM = 10;
-    private static final int MEMORY_SIZE_IN_KB = 256;
-    
+        
     private int processID;
     private ArrayList<LoadableData> loadables;
-    private ExecutionQueue waitingQueue;
     
-    private Scheduler scheduler;
-    private Clock clock;
-    private CPU cpu;
-    private MemoryManager memoryManager;
+    public Scheduler scheduler;
+    public CPU cpu;
+    public MemoryManager memoryManager;
+    public InterruptProcessor interruptProcessor;
     
     public CommandInterface() {
         this.processID = 100;
         this.loadables = new ArrayList<>();
-        this.waitingQueue = new ExecutionQueue();
-        this.scheduler = new Scheduler(ROUND_ROBIN_TIME_QUANTUM);
-        this.clock = new Clock();
-        this.cpu = new CPU(scheduler, clock);
-        this.memoryManager = new MemoryManager(MEMORY_SIZE_IN_KB);
+        
+        this.scheduler = new Scheduler(OSSimulator.ROUND_ROBIN_TIME_QUANTUM);
+        this.memoryManager = new MemoryManager(OSSimulator.MEMORY_SIZE_IN_KB);
+        this.interruptProcessor = new InterruptProcessor(scheduler);
+        this.cpu = new CPU(scheduler, memoryManager, interruptProcessor);
 
     }
-    
+            
     public void handleCommand(String cmd) {
         if (cmd.startsWith("<")) {
             int indexOfClosingAngleBracket = cmd.indexOf(">");
@@ -87,9 +83,17 @@ public class CommandInterface {
         );
     }
     
-    public void exe(int cycles) {
+    public void loadPrograms(int clockTime) {
+        ArrayList<LoadableData> newLoadables = new ArrayList<>();
+        
         for (int i = 0; i < loadables.size(); i++) {
             LoadableData loadable = loadables.get(i);
+            
+            if (loadable.getSimulationCycle() != clockTime) {
+                newLoadables.add(loadable);
+                
+                continue;
+            }
             
             if (loadable.getIsProgram()) {
                 int memorySize = 0;
@@ -140,75 +144,64 @@ public class CommandInterface {
 		}
                 
                 if (memoryManager.allocateMemory(memorySize)) {
-                    PCB process = new PCB(processID++, ProcessState.READY, 1, memorySize, 
-                            operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
-                    scheduler.insertPCB(process);
-                } else {
-                    PCB process = new PCB(processID++, ProcessState.WAIT, 1, memorySize, 
+                    PCB process = new PCB(processID++, ProcessState.READY, 0, memorySize, 
                             operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
                     
-                    waitingQueue.enQueue(process);
+                    scheduler.insertPCB(process, false);
+                } else {
+                    PCB process = new PCB(processID++, ProcessState.WAIT, 0, memorySize, 
+                            operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
+                    
+                    scheduler.insertPCB(process, true);
                 }
             }
         }
         
-        loadables.clear();
-        
-        while (cycles == 0 || clock.getClock() <= cycles) {
-            if (cpu.getActiveProcess() == null && waitingQueue.isEmpty() && scheduler.getReadyQueue().isEmpty()) {
+        loadables = newLoadables;
+    }
+    
+    public void exe(int cycles) {        
+        while (cycles == 0 || cpu.getClock().getClock() <= cycles) {
+            if (cpu.getActiveProcess() == null && scheduler.getWaitingQueue().isEmpty() && scheduler.getReadyQueue().isEmpty() && loadables.isEmpty()) {
                 break;
             }
             
-            cpu.setActiveProcess(scheduler.getNextProcess(clock.getClock()));
+            loadPrograms(cpu.getClock().getClock());
             
-            PCB activeProcess = cpu.getActiveProcess();
-            
-            if (activeProcess != null) {
-                if (activeProcess.getArrival() == cpu.getClock().getClock()) {
-                    activeProcess.setArrived(true);
-                    activeProcess.setStarted(true);
-                    activeProcess.setState(ProcessState.RUN);
-                }
-                
-                activeProcess.setBurst(activeProcess.getBurst() - 1);
-                
-                if (activeProcess.getBurst() == 0) {
-                    activeProcess.setFinished(true);
-                    cpu.setActiveProcess(null);
-                    memoryManager.deallocateMemory(activeProcess.getMemoryAllocated());
-                }
-            }
+            cpu.setActiveProcess(scheduler.getNextProcess(0));
+            cpu.advanceClock();
             
             for (int i = 0; i < scheduler.getReadyQueue().size(); i++) {
                 PCB p = scheduler.getReadyQueue().get(i);
-                
-                if (activeProcess == null || p.getProcessID() != activeProcess.getProcessID()) {
+
+                if (cpu.getActiveProcess() == null || p.getProcessID() != cpu.getActiveProcess().getProcessID()) {
                     p.setWait(p.getWait() + 1);
                 }
             }
-            
-            for (int i = 0; i < waitingQueue.size(); i++) {
-                PCB process = waitingQueue.get(i);
-                
+
+            for (int i = 0; i < scheduler.getWaitingQueue().size(); i++) {
+                PCB process = scheduler.getWaitingQueue().get(i);
+
                 if (memoryManager.allocateMemory(process.getMemoryAllocated())) {
-                    waitingQueue.deQueue(process);
+                    scheduler.getWaitingQueue().deQueue(process);
                     process.setState(ProcessState.READY);
-                    scheduler.insertPCB(process);
+                    scheduler.insertPCB(process, true);
                 }
             }
-            
-            if (activeProcess != null) {
-                System.out.println("Process ID: " + activeProcess.getProcessID() + ", "
-                        + "Wait: " + activeProcess.getWait() + ", "
-                        + "Burst: " + activeProcess.getBurst() + ", "
-                        + "Arrived: " + activeProcess.isArrived() + ", "
-                        + "Active: " + activeProcess.isActive() + ", "
-                        + "Finished: " + activeProcess.isFinished() + ", "
-                        + "Started: " + activeProcess.isStarted()
+
+            if (cpu.getActiveProcess() != null) {
+                System.out.println("Process ID: " + cpu.getActiveProcess().getProcessID() + ", "
+                        + "Wait: " + cpu.getActiveProcess().getWait() + ", "
+                        + "Burst: " + cpu.getActiveProcess().getBurst() + ", "
+                        + "Arrived: " + cpu.getActiveProcess().isArrived() + ", "
+                        + "Active: " + cpu.getActiveProcess().isActive() + ", "
+                        + "Finished: " + cpu.getActiveProcess().isFinished() + ", "
+                        + "Started: " + cpu.getActiveProcess().isStarted() + ", "
+                        + "Next Instruction: " + cpu.getActiveProcess().getNextInstructionIndex() + ", "
+                        + "Instruction Cycles: " + cpu.getActiveProcess().getInstructionCycles() + ", "
+                        + "Current Instruction: " + cpu.getActiveProcess().getOperations().get(cpu.getActiveProcess().getNextInstructionIndex())
                 );
             }
-            
-            cpu.advanceClock();
         }
     }
     

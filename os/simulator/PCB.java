@@ -22,6 +22,8 @@ public class PCB {
     private ArrayList<String> operations;
     private ArrayList<Integer> cycles;
     
+    private int instructionCycles;
+    
     private int initialBurst;
     private int burst;
     private int arrival;
@@ -43,13 +45,13 @@ public class PCB {
         
         this.operations = operations;
         this.cycles = cycles;
+        this.instructionCycles = cycles.get(nextInstructionIndex);
         
         this.initialBurst = initialBurst;
         this.burst = initialBurst;
         this.arrival = arrival;
         this.wait = 0;
-        this.CPUTime = 0;
-        
+        this.CPUTime = 0;        
         this.arrived = false;
         this.started = false;
         this.active = false;
@@ -174,5 +176,13 @@ public class PCB {
 
     public void setInitialBurst(int initialBurst) {
         this.initialBurst = initialBurst;
+    }
+
+    public int getInstructionCycles() {
+        return instructionCycles;
+    }
+
+    public void setInstructionCycles(int instructionCycles) {
+        this.instructionCycles = instructionCycles;
     }
 }

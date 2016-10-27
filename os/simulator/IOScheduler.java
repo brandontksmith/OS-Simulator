@@ -11,7 +11,18 @@ package os.simulator;
  */
 public class IOScheduler {
     
-    public void scheduleIO() {}
-    public void startIO() {}
+    public InterruptProcessor interruptProcessor;
     
+    public IOScheduler(InterruptProcessor interruptProcessor) {
+        this.interruptProcessor = interruptProcessor;
+    }
+    
+    public void scheduleIO(PCB process, int clockTime) {
+        int cycles = IOBurst.generateIOBurst();
+        interruptProcessor.addEvent(process, clockTime + cycles, EventType.INTERRUPT);
+    }
+    
+    public void startIO() {
+        // pretend to do IO?
+    }
 }

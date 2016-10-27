@@ -9,9 +9,6 @@ package os.simulator;
  *
  * @author BTKS
  */
-public interface QueueInterface {
-    
-    public void enQueue(PCB process);
-    public void deQueue(PCB process);
-    
+public enum EventType {
+    INTERRUPT
 }

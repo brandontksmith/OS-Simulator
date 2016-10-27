@@ -11,6 +11,9 @@ package os.simulator;
  */
 public class OSSimulator {
     
+    public static final int ROUND_ROBIN_TIME_QUANTUM = 10;
+    public static final int MEMORY_SIZE_IN_KB = 256;
+    
     /**
      * @param args the command line arguments
      */

@@ -12,7 +12,7 @@ import java.util.Queue;
  *
  * @author BTKS
  */
-public class ExecutionQueue implements QueueInterface {
+public class ExecutionQueue {
     
     Queue<PCB> processes;
     
@@ -20,12 +20,10 @@ public class ExecutionQueue implements QueueInterface {
         this.processes = new LinkedList<PCB>();
     }
     
-    @Override
     public void enQueue(PCB process) {
         this.processes.add(process);
     }
     
-    @Override
     public void deQueue(PCB process) {
         this.processes.remove(process);
     }
@@ -43,6 +41,10 @@ public class ExecutionQueue implements QueueInterface {
     }
     
     public PCB get(int index) {
+        if (index > size() - 1) {
+            return null;
+        }
+        
         return (PCB) processes.toArray()[index];
     }
 }
