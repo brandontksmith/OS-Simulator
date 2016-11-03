@@ -16,10 +16,14 @@ public class IOScheduler {
         
         OS.interruptProcessor.addEvent(process, clockTime + cycles, EventType.INTERRUPT);
         
+        if (!OS.interruptProcessor.isIoIsStarted()) {
+            startIO();
+        }
+        
         return cycles;
     }
     
     public void startIO() {
-        // pretend to do IO?
+        OS.interruptProcessor.setIoIsStarted(true);
     }
 }

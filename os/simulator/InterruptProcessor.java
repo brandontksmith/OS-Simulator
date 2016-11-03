@@ -12,20 +12,27 @@ import java.util.LinkedList;
  * @author BTKS
  */
 public class InterruptProcessor {
-        
+    
+    private boolean ioIsStarted;
+    
     public InterruptProcessor() {
+        this.ioIsStarted = false;
     }
         
     public LinkedList<ECB> signalInterrupt(int clockTime) {
         boolean hasEventsMatchingTime = true;
         LinkedList<ECB> finishedEvents = new LinkedList<>();
                 
-        while (hasEventsMatchingTime) {
+        while (ioIsStarted && hasEventsMatchingTime) {
             if (OS.eventQueue.peek() != null && OS.eventQueue.peek().getClockTime() == clockTime && OS.eventQueue.peek().getEventType() == EventType.INTERRUPT) {
-                finishedEvents.add(OS.eventQueue.poll());
+                finishedEvents.add(getEvent());
             } else {
                 hasEventsMatchingTime = false;
             }
+        }
+        
+        if (ioIsStarted && OS.eventQueue.isEmpty()) {
+            ioIsStarted = false;
         }
         
         return finishedEvents;
@@ -37,6 +44,14 @@ public class InterruptProcessor {
     }
     
     public ECB getEvent() {
-        return null;
+        return OS.eventQueue.poll();
+    }
+
+    public boolean isIoIsStarted() {
+        return ioIsStarted;
+    }
+
+    public void setIoIsStarted(boolean ioIsStarted) {
+        this.ioIsStarted = ioIsStarted;
     }
 }
