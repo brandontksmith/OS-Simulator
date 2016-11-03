@@ -1,9 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package os.simulator;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -12,9 +10,7 @@ package os.simulator;
 public class OSSimulator {
     
     public static volatile CommandInterface commandInterface;
-    
     public static Desktop desktop;
-    
     public static Thread commandInterfaceThread;
         
     public static void main(String[] args) {        
@@ -30,5 +26,13 @@ public class OSSimulator {
                 OSSimulator.desktop.setVisible(true);
             }
         });
+    }
+    
+    public static void sleepForFiftyMs() {
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(CommandInterface.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

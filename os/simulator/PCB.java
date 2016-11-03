@@ -19,6 +19,7 @@ public class PCB {
     private ProcessState state;
     private int instructionIndex;
     private int memoryAllocated;
+    private int memoryRequired;
     
     private ArrayList<String> operations;
     private ArrayList<Integer> cycles;
@@ -37,13 +38,14 @@ public class PCB {
     private boolean finished;
     private boolean waitingIO;
     
-    public PCB(String programName, int processID, ProcessState state, int instructionIndex,
-            int memoryAllocated, ArrayList<String> operations, ArrayList<Integer> cycles, 
-            int arrival, int initialBurst) {
+    public PCB(String programName, int processID, ProcessState state, int instructionIndex, 
+            int memoryRequired, int memoryAllocated, ArrayList<String> operations,
+            ArrayList<Integer> cycles, int arrival, int initialBurst) {
         this.programName = programName;
         this.processID = processID;
         this.state = state;
         this.instructionIndex = instructionIndex;
+        this.memoryRequired = memoryRequired;
         this.memoryAllocated = memoryAllocated;
         
         this.operations = operations;
@@ -176,6 +178,9 @@ public class PCB {
     public String toString() {
         String str = "Process ID: " + processID + "\n";
         str += "Process State: " + state + "\n";
+        str += "CPU Time Remaining: " + burst + "\n";
+        str += "CPU Time Used: " + CPUTime + "\n";
+        str += "I/O Requests: " + ioComplete + "\n";
         str += "Memory Allocated: " + memoryAllocated + "\n";
         
         return str;
@@ -238,32 +243,12 @@ public class PCB {
     public void setInstructionIndex(int instructionIndex) {
         this.instructionIndex = instructionIndex;
     }
-    
-    
+
+    public int getMemoryRequired() {
+        return memoryRequired;
+    }
+
+    public void setMemoryRequired(int memoryRequired) {
+        this.memoryRequired = memoryRequired;
+    }
 }
-
-/*
-
-    private int processID;
-    
-    private ProcessState state;
-    private int nextInstructionIndex;
-    private int memoryAllocated;
-    
-    private ArrayList<String> operations;
-    private ArrayList<Integer> cycles;
-    
-    private int instructionCycles;
-    
-    private int initialBurst;
-    private int burst;
-    private int arrival;
-    private int wait;
-    private int CPUTime;
-    
-    private boolean arrived;
-    private boolean started;
-    private boolean active;
-    private boolean finished;
-
-*/

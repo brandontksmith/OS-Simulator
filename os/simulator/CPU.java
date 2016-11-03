@@ -49,6 +49,7 @@ public class CPU {
         if (activeProcess != null) {
             String instructionName = activeProcess.getCurrentInstruction();
             activeProcess.setBurst(activeProcess.getBurst() - 1);
+            activeProcess.setCPUTime(activeProcess.getCPUTime() + 1);
             
             switch (instructionName) {
                 case "CALCULATE":
@@ -69,7 +70,14 @@ public class CPU {
                     break;
                 
                 case "OUT":
-                    System.out.println(activeProcess);
+                    String processStr = activeProcess.toString();
+                    String processStrForConsole;
+                    
+                    processStrForConsole = "Received by System\n\n" + processStr;
+                    
+                    System.out.println(processStr);
+                    
+                    OSSimulator.desktop.addTextToConsole(processStrForConsole);
                     
                     break;
             }

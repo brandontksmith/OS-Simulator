@@ -1,5 +1,10 @@
 package os.simulator;
 
+/**
+ * The clock keeps count of the number of CPU cycles.
+ * 
+ * @author BTKS
+ */
 public class Clock {
     
     /**
@@ -19,5 +24,5 @@ public class Clock {
      */
     public int getClock() {
         return cycles;
-    }   
+    }    
 }

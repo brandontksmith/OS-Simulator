@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package os.simulator;
 
 import java.io.BufferedReader;
@@ -12,10 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -23,6 +14,8 @@ import javax.swing.table.DefaultTableModel;
  */
 public class CommandInterface implements Runnable {
     
+    public static volatile Thread executionThread;
+    public static volatile boolean canInvokeExecute = true;
     public static volatile LinkedList<String> commands = new LinkedList<>();
     
     private int processID;
@@ -63,7 +56,16 @@ public class CommandInterface implements Runnable {
                     break;
                     
                 case 'E':
-                    exe(cycle);
+                    CommandInterface.canInvokeExecute = false;
+
+                    executionThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            exe(cycle);
+                        }
+                    });
+                    
+                    executionThread.start();
                     
                     break;
             }
@@ -73,9 +75,21 @@ public class CommandInterface implements Runnable {
             } else if (cmd.contains("MEM")) {
                 mem();
             } else if (cmd.contains("LOAD")) {
+                int indexOfSpace = cmd.indexOf(" ");
                 
+                String jobProgramName = cmd.substring(indexOfSpace + 1, cmd.length());
+                load(OS.cpu.getClock().getClock(), jobProgramName);
             } else if (cmd.contains("EXE")) {
-                exe(0);
+                CommandInterface.canInvokeExecute = false;
+                    
+                executionThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        exe(0);
+                    }
+                });
+
+                executionThread.start();
             } else if (cmd.contains("RESET")) {
                 reset();
             } else if (cmd.contains("EXIT")) {
@@ -84,8 +98,15 @@ public class CommandInterface implements Runnable {
         }
     }
     
-    public void proc() {}
-    public void mem() {}
+    public void proc() {
+        OSSimulator.desktop.buildProcessTable();
+        OSSimulator.desktop.addTextToConsole("The Process Table has been reloaded.");
+    }
+    
+    public void mem() {
+        OSSimulator.desktop.buildMemoryTable();
+        OSSimulator.desktop.addTextToConsole("The Memory Table has been reloaded.");
+    }
     
     public void load(int simulationCycle, String jobProgramName) {
         this.loadables.add(
@@ -158,13 +179,13 @@ public class CommandInterface implements Runnable {
 		}
                 
                 if (OS.memoryManager.allocateMemory(memorySize)) {
-                    PCB process = new PCB(loadable.getJobProgramName(), processID++, ProcessState.READY, 0, memorySize, 
+                    PCB process = new PCB(loadable.getJobProgramName(), processID++, ProcessState.READY, 0, memorySize, memorySize, 
                             operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
                     
                     OS.scheduler.insertPCB(process, false);
                     OS.processes.enQueue(process);
                 } else {
-                    PCB process = new PCB(loadable.getJobProgramName(), processID++, ProcessState.NEW, 0, memorySize, 
+                    PCB process = new PCB(loadable.getJobProgramName(), processID++, ProcessState.NEW, 0, memorySize, 0,
                             operations, cyclesOfOperations, loadable.getSimulationCycle(), initialBurst);
                     
                     OS.scheduler.insertPCB(process, true);
@@ -178,20 +199,9 @@ public class CommandInterface implements Runnable {
     
     public void exe(int cycles) {        
         while (cycles == 0 || OS.cpu.getClock().getClock() <= cycles) {
-            if (OS.cpu.getActiveProcess() != null) {
-                System.out.println("Process ID: " + OS.cpu.getActiveProcess().getProcessID() + ", "
-                        + "Wait: " + OS.cpu.getActiveProcess().getWait() + ", "
-                        + "Burst: " + OS.cpu.getActiveProcess().getBurst() + ", "
-                        + "Arrived: " + OS.cpu.getActiveProcess().isArrived() + ", "
-                        + "Finished: " + OS.cpu.getActiveProcess().isFinished() + ", "
-                        + "Started: " + OS.cpu.getActiveProcess().isStarted() + ", "
-                        + "Next Instruction: " + OS.cpu.getActiveProcess().getInstructionIndex() + ", "
-                        + "Instruction Cycles: " + OS.cpu.getActiveProcess().getInstructionCycles() + ", "
-                        + "Current Instruction: " + OS.cpu.getActiveProcess().getOperations().get(OS.cpu.getActiveProcess().getInstructionIndex())
-                );
-            }
-            
             if (OS.cpu.getActiveProcess() == null && OS.scheduler.getWaitingQueue().isEmpty() && OS.scheduler.getReadyQueue().isEmpty() && loadables.isEmpty()) {
+                CommandInterface.canInvokeExecute = true;
+                
                 break;
             }
             
@@ -199,111 +209,30 @@ public class CommandInterface implements Runnable {
                 loadPrograms(OS.cpu.getClock().getClock());
             }
             
-            OS.cpu.setActiveProcess(OS.scheduler.getNextProcess(0));
+            OS.dispatcher.dispatch();
             OS.cpu.advanceClock();
             
-            for (int i = 0; i < OS.scheduler.getReadyQueue().size(); i++) {
-                PCB p = OS.scheduler.getReadyQueue().get(i);
-
-                if (OS.cpu.getActiveProcess() == null || p.getProcessID() != OS.cpu.getActiveProcess().getProcessID()) {
-                    p.setWait(p.getWait() + 1);
-                }
-            }
+            OS.processManager.incrementWaitOnReadyProcesses();
+            OS.memoryManager.addWaitingProcessesToMemory();
+                        
+            OSSimulator.desktop.buildMemoryTable();
+            OSSimulator.desktop.buildProcessTable();
             
-            for (int i = 0; i < OS.scheduler.getWaitingQueue().size(); i++) {
-                PCB process = OS.scheduler.getWaitingQueue().get(i);
-                
-                if (process.isWaitingIO()) {
-                    continue;
-                }
-                
-                if (OS.memoryManager.allocateMemory(process.getMemoryAllocated())) {
-                    OS.scheduler.getWaitingQueue().deQueue(process);
-                    process.setState(ProcessState.READY);
-                    OS.scheduler.insertPCB(process, false);
-                }
-            }
-            
-            JTable memoryTable = OSSimulator.desktop.jTable1;
-            JTable processTable = OSSimulator.desktop.jTable2;
-            
-            while(memoryTable.getRowCount() > 0) {
-                ((DefaultTableModel) memoryTable.getModel()).removeRow(0);
-            }
-            
-            int row = 0;
-            
-            for (int i = 0; i < OS.processes.size(); i++) {
-                PCB process = OS.processes.get(i);
-                
-                if (process.isFinished() || process.getState() == ProcessState.NEW) {
-                    continue;
-                }
-                
-                ((DefaultTableModel) memoryTable.getModel()).insertRow(row++, new Object[]{
-                    process.getProgramName(),
-                    process.getMemoryAllocated()
-                });
-            }
-            
-            while(processTable.getRowCount() > 0) {
-                ((DefaultTableModel) processTable.getModel()).removeRow(0);
-            }
-            
-            row = 0;
-            
-            for (int i = 0; i < OS.processes.size(); i++) {
-                PCB process = OS.processes.get(i);
-                
-                ((DefaultTableModel) processTable.getModel()).insertRow(row++, process.formatForTable());
-            }
-            
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(CommandInterface.class.getName()).log(Level.SEVERE, null, ex);
-            }            
+            OSSimulator.sleepForFiftyMs();
         }
     }
     
-    public void reset() {}
-    
-    public void promptUser() {}
-    
-    public class LoadableData {
+    public void reset() {
+        executionThread.stop();
         
-        private int simulationCycle;
-        private String jobProgramName;
-        private boolean isProgram;
+        processID = 100;
+        loadables.clear();
         
-        public LoadableData(int simulationCycle, String jobProgramName, boolean isProgram) {
-            this.simulationCycle = simulationCycle;
-            this.jobProgramName = jobProgramName;
-            this.isProgram = isProgram;
-        }
-
-        public int getSimulationCycle() {
-            return simulationCycle;
-        }
-
-        public void setSimulationCycle(int simulationCycle) {
-            this.simulationCycle = simulationCycle;
-        }
-
-        public String getJobProgramName() {
-            return jobProgramName;
-        }
-
-        public void setJobProgramName(String jobProgramName) {
-            this.jobProgramName = jobProgramName;
-        }
-
-        public boolean getIsProgram() {
-            return isProgram;
-        }
-
-        public void setIsProgram(boolean isProgram) {
-            this.isProgram = isProgram;
-        }
+        OS.initializeOS();
+        
+        OSSimulator.desktop.buildMemoryTable();
+        OSSimulator.desktop.buildProcessTable();
     }
+    
+    public void promptUser() {}    
 }

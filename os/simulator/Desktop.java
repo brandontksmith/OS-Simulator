@@ -5,6 +5,9 @@
  */
 package os.simulator;
 
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
 /**
  *
  * @author BTKS
@@ -36,6 +39,7 @@ public class Desktop extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2 = new javax.swing.JTable();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -91,12 +95,17 @@ public class Desktop extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(jTable2);
 
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel1.setText("Memory Usage: [...]");
+
         jDesktopPane2.setLayer(label1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jDesktopPane2.setLayer(textArea1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jDesktopPane2.setLayer(textField1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jDesktopPane2.setLayer(button1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jDesktopPane2.setLayer(jScrollPane1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jDesktopPane2.setLayer(jScrollPane2, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        jDesktopPane2.setLayer(jLabel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout jDesktopPane2Layout = new javax.swing.GroupLayout(jDesktopPane2);
         jDesktopPane2.setLayout(jDesktopPane2Layout);
@@ -115,7 +124,9 @@ public class Desktop extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jDesktopPane2Layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 272, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(jDesktopPane2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 272, Short.MAX_VALUE)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 621, Short.MAX_VALUE)))
                 .addContainerGap())
@@ -132,11 +143,17 @@ public class Desktop extends javax.swing.JFrame {
                     .addComponent(textField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jDesktopPane2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 439, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1))
+                .addGroup(jDesktopPane2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 439, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jDesktopPane2Layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 401, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel1)))
                 .addContainerGap(13, Short.MAX_VALUE))
         );
+
+        jLabel1.getAccessibleContext().setAccessibleName("memoryUsage");
+        jLabel1.getAccessibleContext().setAccessibleDescription("");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -197,10 +214,54 @@ public class Desktop extends javax.swing.JFrame {
             }
         });
     }
+    
+    public void buildMemoryTable() {
+        int row = 0;
+        
+        while(jTable1.getRowCount() > 0) {
+            ((DefaultTableModel) jTable1.getModel()).removeRow(0);
+        }
+        
+        for (int i = 0; i < OS.processes.size(); i++) {
+            PCB process = OS.processes.get(i);
+
+            if (process.isFinished() || process.getState() == ProcessState.NEW) {
+                continue;
+            }
+
+            ((DefaultTableModel) jTable1.getModel()).insertRow(row++, new Object[]{
+                process.getProgramName(),
+                process.getMemoryAllocated()
+            });
+        }
+        
+        jLabel1.setText("Memory Usage: " + OS.memoryManager.getAllocatedMemory() + "kb of " + OS.memoryManager.getMemorySize() + "kb used");
+    }
+    
+    public void buildProcessTable() {
+        int row = 0;
+        
+        while(jTable2.getRowCount() > 0) {
+            ((DefaultTableModel) jTable2.getModel()).removeRow(0);
+        }
+
+        row = 0;
+
+        for (int i = 0; i < OS.processes.size(); i++) {
+            PCB process = OS.processes.get(i);
+
+            ((DefaultTableModel) jTable2.getModel()).insertRow(row++, process.formatForTable());
+        }
+    }
+        
+    public void addTextToConsole(String text) {
+        textArea1.append("OS-Simulator: " + text + "\n");
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private java.awt.Button button1;
     private javax.swing.JDesktopPane jDesktopPane2;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     public javax.swing.JTable jTable1;

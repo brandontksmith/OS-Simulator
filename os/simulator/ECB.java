@@ -1,12 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package os.simulator;
 
 /**
- *
+ * ECB is a model for holding event-specific information.
+ * 
  * @author BTKS
  */
 public class ECB {
