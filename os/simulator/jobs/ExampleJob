@@ -1,0 +1,8 @@
+RESET
+<0>LOAD WordProcessor
+<15>LOAD WebBrowser
+<15>LOAD WordProcessor
+<25>LOAD WebBrowser
+<25>LOAD WebBrowser
+<25>LOAD WebBrowser
+EXE

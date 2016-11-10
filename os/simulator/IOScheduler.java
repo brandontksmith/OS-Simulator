@@ -1,16 +1,19 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package os.simulator;
 
 /**
- *
+ * This class handles the scheduling of I/O.
+ * 
  * @author BTKS
  */
 public class IOScheduler {
-        
+    
+    /**
+     * Schedule I/O and add as an event to the Interrupt Processor.
+     * 
+     * @param process the process that is waiting on I/O
+     * @param clockTime the current clock time
+     * @return the number of cycles that the I/O will take
+     */
     public int scheduleIO(PCB process, int clockTime) {
         int cycles = IOBurst.generateIOBurst();
         
@@ -23,6 +26,9 @@ public class IOScheduler {
         return cycles;
     }
     
+    /**
+     * Starts I/O by notifying the Interrupt Processor.
+     */
     public void startIO() {
         OS.interruptProcessor.setIoIsStarted(true);
     }

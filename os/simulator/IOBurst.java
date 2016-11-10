@@ -2,6 +2,11 @@ package os.simulator;
 
 import java.util.Random;
 
+/**
+ * Helper class for the IO Scheduler and generating random IO Bursts.
+ * 
+ * @author BTKS
+ */
 public class IOBurst {
     
     /**
