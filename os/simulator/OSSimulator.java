@@ -4,15 +4,31 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * OS Simulator Main Class
  * @author BTKS
  */
 public class OSSimulator {
     
+    /**
+     * Static reference to the Command Interface.
+     */
     public static volatile CommandInterface commandInterface;
+    
+    /**
+     * Static reference to the OS Desktop.
+     */
     public static Desktop desktop;
+    
+    /**
+     * Static reference to the Command Interface Thread.
+     */
     public static Thread commandInterfaceThread;
-        
+    
+    /**
+     * Starts and initializes the OS Simulator.
+     * 
+     * @param args command line arguments
+     */
     public static void main(String[] args) {        
         commandInterface = new CommandInterface();
         
@@ -28,6 +44,9 @@ public class OSSimulator {
         });
     }
     
+    /**
+     * Timer for slowing down the OS Simulator.
+     */
     public static void sleepForFiftyMs() {
         try {
             Thread.sleep(50);
