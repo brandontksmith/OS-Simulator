@@ -245,6 +245,10 @@ public class Desktop extends javax.swing.JFrame {
 
         for (int i = 0; i < OS.processes.size(); i++) {
             PCB process = OS.processes.get(i);
+            
+            if (process.isFinished()) {
+                continue;
+            }
 
             ((DefaultTableModel) jTable2.getModel()).insertRow(row++, process.formatForTable());
         }
