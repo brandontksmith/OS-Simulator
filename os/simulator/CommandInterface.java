@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -82,7 +84,23 @@ public class CommandInterface implements Runnable {
             int indexOfCharacterAfterClosingAngleBracket = indexOfClosingAngleBracket + 1;
             int indexOfFirstSpace = cmd.indexOf(" ");
             
-            int cycle = Integer.parseInt(cmd.substring(1, indexOfClosingAngleBracket));
+            //int cycle = Integer.parseInt(cmd.substring(1, indexOfClosingAngleBracket));
+            
+            int defaultCycle = OS.cpu.getClock().getClock();
+
+            try{
+                defaultCycle = Integer.parseInt(cmd.substring(1, indexOfClosingAngleBracket));
+
+                if (defaultCycle < OS.cpu.getClock().getClock()) {
+                    defaultCycle = OS.cpu.getClock().getClock();
+                    
+                    System.out.println("Cycle has passed");
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+            
+            int cycle = defaultCycle;
             
             switch (cmd.charAt(indexOfCharacterAfterClosingAngleBracket)) {
                 case 'L':
@@ -160,15 +178,16 @@ public class CommandInterface implements Runnable {
         // get URL from jobs folder if the resource exists
         URL url = getClass().getResource("/os/simulator/jobs/" + jobProgramName);
         
+        InputStream in = getClass().getResourceAsStream("/os/simulator/jobs/" + jobProgramName);
+        
         // if resource does not exist, then it should be a program and not a job
-        if (url != null) {
+        if (in != null) {
             loadJob(jobProgramName);
         } else {
             this.loadables.add(
                 new LoadableData(simulationCycle, jobProgramName, true)
             );
         }
-        
     }
     
     /**
@@ -179,9 +198,12 @@ public class CommandInterface implements Runnable {
     public void loadJob(String jobProgramName) {        
         try {
             String s;
-            BufferedReader input = new BufferedReader(new FileReader(getClass().getResource("/os/simulator/jobs/" + jobProgramName).getFile()));
+            //BufferedReader input = new BufferedReader(new FileReader(getClass().getResource("/os/simulator/jobs/" + jobProgramName).getFile()));
 
-            while ((s = input.readLine()) != null) {
+            InputStream in = getClass().getResourceAsStream("/os/simulator/jobs/" + jobProgramName); 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            
+            while ((s = reader.readLine()) != null) {
                 CommandInterface.addCommand(s);
             }
         } catch (FileNotFoundException fnfe) {
@@ -217,9 +239,12 @@ public class CommandInterface implements Runnable {
                 
                 try {
                     String s;
-                    BufferedReader input = new BufferedReader(new FileReader(getClass().getResource("/os/simulator/programs/" + loadable.getJobProgramName()).getFile()));
+                    //BufferedReader input = new BufferedReader(new FileReader(getClass().getResource("/os/simulator/programs/" + loadable.getJobProgramName()).getFile()));
                     
-                    while ((s = input.readLine()) != null) {
+                    InputStream in = getClass().getResourceAsStream("/os/simulator/programs/" + loadable.getJobProgramName());
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                    
+                    while ((s = reader.readLine()) != null) {
                         StringTokenizer st = new StringTokenizer(s);
                         
                         String operation = st.nextToken();
@@ -255,7 +280,7 @@ public class CommandInterface implements Runnable {
                         }
                     }
                     
-                    input.close();
+                    in.close();
 		} catch (FileNotFoundException fnfe) {
                     System.out.println(fnfe.getMessage());
 		} catch (IOException ioe) {
